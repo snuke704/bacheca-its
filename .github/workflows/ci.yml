@@ -1,0 +1,81 @@
+# ---------------------------------------------------------------------------
+#  CI - i controlli che girano su OGNI pull request.
+#
+#  Questo file e' INCOMPLETO: dove trovi  # TODO n  devi scrivere tu.
+#  Il primo gate (struttura) e' gia' completo: usalo come esempio.
+#
+#  Consiglio: completa un TODO alla volta, fai commit, guarda la tab Actions.
+#  Un job rosso ti dice esattamente quale riga non va.
+# ---------------------------------------------------------------------------
+name: CI
+
+# TODO 1 - Fai partire questo workflow su OGNI pull request verso main,
+#          e anche sui push diretti a main.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+
+  # -------------------------------------------------- GATE 1: struttura (ESEMPIO GIA' FATTO)
+  struttura:
+    name: Gate struttura - i file ci sono ancora?
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: I file indispensabili non sono stati cancellati
+        run: |
+          for f in data/avvisi.json src/build.mjs test/bacheca.test.mjs package.json; do
+            if [ ! -f "$f" ]; then
+              echo "manca $f: non si passa"
+              exit 1
+            fi
+          done
+          echo "struttura del progetto integra"
+
+  # -------------------------------------------------- GATE 2: segreti
+  segreti:
+    name: Gate segreti - niente credenziali nel repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # TODO 2 - Aggiungi lo step che esegue lo script script/sniffa-segreti.sh
+      #          sulla cartella corrente. Lo script esce con 1 se trova un segreto:
+      #          tanto basta perche' il job diventi rosso.
+
+  # -------------------------------------------------- GATE 3: applicazione
+  applicazione:
+    name: Gate applicazione - dipendenze, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # TODO 3 - Tre step, in quest'ordine:
+      #          a) installa ESATTAMENTE le dipendenze dichiarate nel lockfile
+      #             (non "npm install": il comando che rispetta il lockfile)
+      #          b) esegui i test
+      #          c) costruisci il sito
+      #          Gli script sono gia' definiti in package.json.
+
+      # TODO 4 - Smoke test sull'ARTEFATTO prodotto (non sul codice sorgente).
+      #          Deve fallire se dist/index.html non esiste o e' vuoto, e deve
+      #          fallire se il numero di righe nella pagina e' diverso dal numero
+      #          di avvisi in data/avvisi.json.
+      #          Ti servono, gia' pronti da copiare:
+      #            attesi=$(node -e "console.log(JSON.parse(require('fs').readFileSync('data/avvisi.json','utf8')).avvisi.length)")
+      #            trovati=$(grep -c '<td class="cod">' dist/index.html || true)
+
+      # TODO 5 - Carica dist/ come artefatto con nome "sito", cosi' che il
+      #          workflow di release possa scaricarlo invece di ricostruirlo.

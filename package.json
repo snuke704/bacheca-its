@@ -1,0 +1,14 @@
+{
+  "name": "bacheca-its",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Bacheca avvisi ITS ICT Piemonte - generatore statico",
+  "scripts": {
+    "build": "node src/build.mjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

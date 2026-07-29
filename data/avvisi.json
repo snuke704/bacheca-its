@@ -1,0 +1,11 @@
+{
+  "istituto": "ITS ICT Piemonte",
+  "corso": "AWS Cloud Architect",
+  "avvisi": [
+    { "codice": "AV-01", "data": "2026-09-01", "categoria": "didattica",   "titolo": "Apertura delle lezioni del secondo anno",            "priorita": 1 },
+    { "codice": "AV-02", "data": "2026-09-08", "categoria": "segreteria",  "titolo": "Consegna dei documenti per lo stage curricolare",   "priorita": 2 },
+    { "codice": "AV-03", "data": "2026-09-15", "categoria": "didattica",   "titolo": "Calendario delle verifiche di unita formativa",      "priorita": 1 },
+    { "codice": "AV-04", "data": "2026-10-02", "categoria": "orientamento","titolo": "Open day: presentazione del percorso ACA",           "priorita": 3 },
+    { "codice": "AV-05", "data": "2026-10-20", "categoria": "segreteria",  "titolo": "Rimborsi abbonamento trasporti: scadenza domande",   "priorita": 2 }
+  ]
+}
