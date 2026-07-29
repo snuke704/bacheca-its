@@ -17,7 +17,7 @@ export function perCategoria(avvisi) {
 }
 
 export function render(dati, versione) {
-const avvisi = ordina(dati.avvisi).slice(0, -1);
+  const avvisi = ordina(dati.avvisi);
   const righe = avvisi
     .map(
       (a) => `      <tr>
