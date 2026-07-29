@@ -9,9 +9,11 @@
 # ---------------------------------------------------------------------------
 name: CI
 
-# TODO 1 - Fai partire questo workflow su OGNI pull request verso main,
-#          e anche sui push diretti a main.
 on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -47,9 +49,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # TODO 2 - Aggiungi lo step che esegue lo script script/sniffa-segreti.sh
-      #          sulla cartella corrente. Lo script esce con 1 se trova un segreto:
-      #          tanto basta perche' il job diventi rosso.
+      - name: Cerca credenziali nel repository
+        run: bash script/sniffa-segreti.sh .
 
   # -------------------------------------------------- GATE 3: applicazione
   applicazione:
@@ -62,20 +63,29 @@ jobs:
         with:
           node-version: '20'
 
-      # TODO 3 - Tre step, in quest'ordine:
-      #          a) installa ESATTAMENTE le dipendenze dichiarate nel lockfile
-      #             (non "npm install": il comando che rispetta il lockfile)
-      #          b) esegui i test
-      #          c) costruisci il sito
-      #          Gli script sono gia' definiti in package.json.
+      - name: Installa le dipendenze dal lockfile
+        run: npm ci
 
-      # TODO 4 - Smoke test sull'ARTEFATTO prodotto (non sul codice sorgente).
-      #          Deve fallire se dist/index.html non esiste o e' vuoto, e deve
-      #          fallire se il numero di righe nella pagina e' diverso dal numero
-      #          di avvisi in data/avvisi.json.
-      #          Ti servono, gia' pronti da copiare:
-      #            attesi=$(node -e "console.log(JSON.parse(require('fs').readFileSync('data/avvisi.json','utf8')).avvisi.length)")
-      #            trovati=$(grep -c '<td class="cod">' dist/index.html || true)
+      - name: Esegui i test
+        run: npm test
 
-      # TODO 5 - Carica dist/ come artefatto con nome "sito", cosi' che il
-      #          workflow di release possa scaricarlo invece di ricostruirlo.
+      - name: Costruisci il sito
+        run: npm run build
+
+      - name: Smoke test sull'artefatto
+        run: |
+          test -s dist/index.html || { echo "dist/index.html mancante o vuoto"; exit 1; }
+          attesi=$(node -e "console.log(JSON.parse(require('fs').readFileSync('data/avvisi.json','utf8')).avvisi.length)")
+          trovati=$(grep -c '<td class="cod">' dist/index.html || true)
+          echo "Avvisi attesi: $attesi"
+          echo "Righe trovate: $trovati"
+          if [ "$trovati" -ne "$attesi" ]; then
+            echo "Il numero di righe non corrisponde al numero di avvisi"
+            exit 1
+          fi
+
+      - name: Carica l'artefatto del sito
+        uses: actions/upload-artifact@v4
+        with:
+          name: sito
+          path: dist/

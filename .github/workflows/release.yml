@@ -15,10 +15,13 @@ on:
   push:
     branches: [main]
 
-  # TODO 6 - Aggiungi la partenza a mano (workflow_dispatch) con un input
-  #          chiamato  versione_da_ripubblicare : lo SHA corto di una build
-  #          gia' collaudata. Non obbligatorio, default stringa vuota.
-  #          Questo input e' il tuo pulsante di ROLLBACK.
+  workflow_dispatch:
+    inputs:
+      versione_da_ripubblicare:
+        description: 'SHA corto di una build già collaudata'
+        required: false
+        default: ''
+        type: string
 
 permissions:
   contents: read
@@ -40,16 +43,11 @@ jobs:
         with:
           # tutta la storia del repository: senza, non potresti tornare indietro
           fetch-depth: 0
-
-      # TODO 7 - Se l'operatore ha indicato una versione da ripubblicare, qui il
-      #          repository deve tornare a QUELLO commit prima di costruire.
-      #          Serve uno step che:
-      #            - parte solo quando il workflow e' stato lanciato a mano E
-      #              l'input del TODO 6 non e' vuoto (usa  if: )
-      #            - esegue  git checkout  sullo SHA indicato
-      #          ATTENZIONE: non provare a passare lo SHA come  ref:  del checkout
-      #          qui sopra: actions/checkout cerca quel valore fra i nomi di branch
-      #          e di tag, non lo trova, e il job muore.
+      - name: Torna alla versione da ripubblicare
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.versione_da_ripubblicare != '' }}
+        env:
+          VERSIONE_DA_RIPUBBLICARE: ${{ inputs.versione_da_ripubblicare }}
+        run: git checkout "$VERSIONE_DA_RIPUBBLICARE"
 
       - uses: actions/setup-node@v4
         with:
@@ -98,6 +96,7 @@ jobs:
     name: Approvazione umana prima della produzione
     needs: [build, collaudo]
     runs-on: ubuntu-latest
+    environment: produzione
 
     # TODO 8 - Aggancia questo job all'environment "produzione", quello che hai
     #          creato da Settings con i Required reviewers. E' una riga sola ed e'
@@ -113,6 +112,9 @@ jobs:
   pubblica:
     name: Pubblica sul branch gh-pages
     runs-on: ubuntu-latest
+    needs: [build, approvazione]
+    permissions:
+      contents: write
 
     # TODO 9 - Questo job deve partire solo DOPO build e approvazione, e gli serve
     #          il permesso di SCRIVERE sul repository per spingere su gh-pages.
@@ -120,6 +122,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: sito
+          path: sito
 
       # TODO 10 - Scarica l'artefatto "sito" nella cartella  sito .
       #           NON rifare la build: e' esattamente il punto della prova.
